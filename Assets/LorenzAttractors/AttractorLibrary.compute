@@ -1,0 +1,26 @@
+#pragma kernel LorenzKernel
+
+
+RWStructuredBuffer<float3> _Positions;
+
+
+
+float _Step;
+
+float3 _Params;
+
+
+
+[numthreads(64,1,1)]
+void LorenzKernel (uint3 id: SV_DispatchThreadID){
+
+    float3 p = _Positions[id.x];
+    float3 m = _Params;
+
+    _Positions[id.x].x += m.x * (p.y - p.x) * _Step;
+    _Positions[id.x].y += (p.x * (m.y - p.z) - p.y) * _Step;
+    _Positions[id.x].z += (p.x * p.y - m.z * p.z) * _Step;    
+    
+}
+
+
