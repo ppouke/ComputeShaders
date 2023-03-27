@@ -1,0 +1,166 @@
+#pragma kernel LorenzKernel
+#pragma kernel AizawaKernel
+#pragma kernel ChenLeeKernel
+#pragma kernel FourWingKernel
+#pragma kernel HalvorsenKernel
+#pragma kernel ThomasKernel
+#pragma kernel RosslerKernel
+#pragma kernel DadrasKernel
+#pragma kernel TSUCSKernel
+
+
+
+RWStructuredBuffer<float3> _Positions;
+
+float _Step;
+
+
+
+
+
+float3 Lorenz(float3 p){
+    float3 dp;
+    float3 m = float3(10, 28, 2.666667);
+    dp.x = m.x * (p.y - p.x) * _Step;
+    dp.y = (p.x * (m.y - p.z) - p.y) * _Step;
+    dp.z = (p.x * p.y - m.z * p.z) * _Step;   
+    return dp; 
+
+}
+
+float3 Aizawa(float3 p){
+    float3 dp;
+    float a = 0.95;
+    float b = 0.7;
+    float c = 0.6;
+    float d = 3.5;
+    float e = 0.25;
+    float f = 0.1;
+
+    dp.x = (p.z - b)*p.x - d * p.y;
+    dp.y = d * p.x + (p.z - b) * p.y;
+    dp.z = c + a*p.z - (pow(p.z,3)/3) - (p.x*p.x + p.y*p.y)*(1 + e * p.z) + f * p.z * pow(p.x,3);
+
+    //clamp
+    
+    return dp * _Step;
+}
+
+float3 ChenLee(float3 p){
+    float3 dp;
+    float a = 5 /4;
+    float b = -10/ 4;
+    float c = -0.38 / 4;
+
+    
+    dp.x =  a*p.x - p.y * p.z;
+    dp.y = b * p.y + p.x * p.z;
+    dp.z = c * p.z + p.x * p.y / 3;
+    return dp * _Step;
+}
+
+
+float3 FourWing(float3 p){
+    float3 dp;
+    float a = 4;
+    float b = 6;
+    float c = 10;
+    float d = 5;
+    float k = 1;
+
+    dp.x = a * p.x - b*p.y*p.z;
+    dp.y = -c*p.y + p.x*p.z;
+    dp.z = k*p.x - d*p.z + p.x*p.y;
+
+    return dp * _Step;
+}
+
+
+float3 Halvorsen(float3 p){
+    float3 dp;
+    float a = 1.89;
+
+    dp.x = -a*p.x - 4*p.y - 4*p.z - pow(p.y, 2);
+    dp.y = -a*p.y - 4*p.z - 4*p.x - (p.z*p.z);
+    dp.z = -a*p.z - 4*p.x - 4*p.y - (p.x*p.x);
+
+    return dp * _Step;
+}
+
+float3 Thomas(float3 p){
+    float3 dp;
+    float b = 0.208186;
+    
+    dp.x = sin(p.y) - b*p.x;
+    dp.y = sin(p.z) - b*p.y;
+    dp.z = sin(p.x) - b*p.z;
+
+    return dp * _Step;
+}
+
+float3 Rossler(float3 p){
+    float3 dp;
+    float a = 0.2;
+    float b = 0.2;
+    float c = 5.7;
+
+    dp.x = -(p.y + p.z);
+    dp.y = p.x + a*p.y;
+    dp.z = b + p.z*(p.x - c);
+
+    return dp * _Step;
+}
+
+float3 Dadras(float3 p){
+    float3 dp;
+    float a = 3;
+    float b = 2.7;
+    float c = 1.7;
+    float d = 2;
+    float e = 9;
+
+    dp.x = p.y - a* p.x + b*p.y*p.z;
+    dp.y = c*p.y - p.x*p.z + p.z;
+    dp.z = d*p.x*p.y - e*p.z;
+    return dp * _Step;
+}
+
+float3 TSUCS(float3 p){
+    float3 dp;
+    float a = 40;
+    float c = 0.833;
+    float d = 0.5;
+    float e = 0.65;
+    float f = 20;
+
+    dp.x = a*(p.y - p.x) + d * p.x * p.z;
+    dp.y = f*p.y - p.x * p.z;
+    dp.z = c* p.z + p.x * p.y - e * pow(p.x, 2);
+
+    return dp * _Step;
+}
+
+
+
+#define KERNEL_FUNCTION(function)\
+[numthreads(64,1,1)]\
+void function##Kernel (uint3 id: SV_DispatchThreadID){\
+    float3 dp = function(_Positions[id.x]);\
+    _Positions[id.x].x += dp.x;\
+    _Positions[id.x].y += dp.y;\
+    _Positions[id.x].z += dp.z;\
+    _Positions[id.x].x = max(-1000,min(1000,_Positions[id.x].x ));\
+    _Positions[id.x].y = max(-1000,min(1000,_Positions[id.x].y ));\
+    _Positions[id.x].z = max(-1000,min(1000,_Positions[id.x].z ));\
+}
+
+KERNEL_FUNCTION(Lorenz)
+KERNEL_FUNCTION(Aizawa)
+KERNEL_FUNCTION(ChenLee)
+KERNEL_FUNCTION(FourWing)
+KERNEL_FUNCTION(Halvorsen)
+KERNEL_FUNCTION(Thomas)
+KERNEL_FUNCTION(Rossler)
+KERNEL_FUNCTION(Dadras)
+KERNEL_FUNCTION(TSUCS)
+
